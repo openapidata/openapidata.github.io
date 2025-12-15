@@ -15,11 +15,18 @@ const { BSON } = require('bson');
 // --- CONFIGURATION ---
 const OUTPUT_DIR = path.join(process.cwd(), 'public', 'api', 'v1');
 const COUNTS = {
-  users: 100,      // Number of users
-  posts: 500,      // Number of posts
-  comments: 2000,  // Number of comments
+  users: 100,
+  posts: 500,
+  comments: 2000,
   todos: 300,
-  photos: 500
+  photos: 500,
+  products: 200,
+  orders: 150,
+  carts: 50,
+  post_categories: 10,
+  product_categories: 15,
+  notes: 100,
+  payments: 150
 };
 
 // --- DATA GENERATORS ---
@@ -30,6 +37,8 @@ const generateUsers = (count) => {
     name: faker.person.fullName(),
     username: faker.internet.userName(),
     email: faker.internet.email(),
+    avatar: faker.image.avatar(),
+    role: faker.helpers.arrayElement(['admin', 'user', 'editor']),
     address: {
       street: faker.location.street(),
       suite: faker.location.secondaryAddress(),
@@ -50,12 +59,24 @@ const generateUsers = (count) => {
   }));
 };
 
-const generatePosts = (count, users) => {
+const generatePostCategories = (count) => {
+  return Array.from({ length: count }).map((_, i) => ({
+    id: i + 1,
+    name: faker.lorem.word(),
+    slug: faker.lorem.slug(),
+    description: faker.lorem.sentence()
+  }));
+};
+
+const generatePosts = (count, users, categories) => {
   return Array.from({ length: count }).map((_, i) => ({
     userId: faker.helpers.arrayElement(users).id,
     id: i + 1,
+    categoryId: faker.helpers.arrayElement(categories).id,
     title: faker.lorem.sentence(),
-    body: faker.lorem.paragraphs(2)
+    body: faker.lorem.paragraphs(2),
+    tags: [faker.lorem.word(), faker.lorem.word()],
+    reactions: faker.number.int({ min: 0, max: 100 })
   }));
 };
 
@@ -66,6 +87,86 @@ const generateComments = (count, posts) => {
     name: faker.lorem.sentence(5),
     email: faker.internet.email(),
     body: faker.lorem.paragraph()
+  }));
+};
+
+const generateProductCategories = (count) => {
+  return Array.from({ length: count }).map((_, i) => ({
+    id: i + 1,
+    name: faker.commerce.department(),
+    image: faker.image.urlLoremFlickr({ category: 'business' })
+  }));
+};
+
+const generateProducts = (count, categories) => {
+  return Array.from({ length: count }).map((_, i) => ({
+    id: i + 1,
+    title: faker.commerce.productName(),
+    price: parseFloat(faker.commerce.price()),
+    description: faker.commerce.productDescription(),
+    category: faker.helpers.arrayElement(categories).name,
+    image: faker.image.urlLoremFlickr({ category: 'products' }),
+    rating: {
+      rate: faker.number.float({ min: 1, max: 5, precision: 0.1 }),
+      count: faker.number.int({ min: 1, max: 500 })
+    }
+  }));
+};
+
+const generateOrders = (count, users, products) => {
+  return Array.from({ length: count }).map((_, i) => {
+    const orderProducts = faker.helpers.arrayElements(products, faker.number.int({ min: 1, max: 5 }));
+    const total = orderProducts.reduce((sum, p) => sum + p.price, 0);
+    
+    return {
+      id: i + 1,
+      userId: faker.helpers.arrayElement(users).id,
+      date: faker.date.recent(),
+      products: orderProducts.map(p => ({
+        productId: p.id,
+        quantity: faker.number.int({ min: 1, max: 3 })
+      })),
+      total: parseFloat(total.toFixed(2)),
+      status: faker.helpers.arrayElement(['pending', 'processing', 'shipped', 'delivered', 'cancelled'])
+    };
+  });
+};
+
+const generateCarts = (count, users, products) => {
+  return Array.from({ length: count }).map((_, i) => ({
+    id: i + 1,
+    userId: faker.helpers.arrayElement(users).id,
+    date: faker.date.recent(),
+    products: faker.helpers.arrayElements(products, 3).map(p => ({
+      productId: p.id,
+      quantity: faker.number.int({ min: 1, max: 5 })
+    }))
+  }));
+};
+
+const generatePayments = (count, orders) => {
+  return Array.from({ length: count }).map((_, i) => {
+    const order = faker.helpers.arrayElement(orders);
+    return {
+      id: i + 1,
+      orderId: order.id,
+      method: faker.helpers.arrayElement(['credit_card', 'paypal', 'bank_transfer']),
+      amount: order.total,
+      currency: 'USD',
+      status: faker.helpers.arrayElement(['succeeded', 'failed', 'pending']),
+      transactionId: faker.string.uuid()
+    };
+  });
+};
+
+const generateNotes = (count, users) => {
+  return Array.from({ length: count }).map((_, i) => ({
+    id: i + 1,
+    userId: faker.helpers.arrayElement(users).id,
+    title: faker.lorem.sentence(),
+    content: faker.lorem.paragraphs(1),
+    date: faker.date.recent(),
+    tags: [faker.lorem.word(), faker.color.human()]
   }));
 };
 
@@ -113,7 +214,6 @@ const generateFormats = (key, data) => {
 
   // 4. CSV
   try {
-    // Flatten objects for CSV if necessary or let json2csv handle it
     const parser = new Parser();
     const csv = parser.parse(data);
     saveFile(`${key}.csv`, csv);
@@ -131,8 +231,6 @@ const generateFormats = (key, data) => {
 
   // 7. BSON
   try {
-    // BSON requires a root document, usually. We'll serialize the array wrapped in an object or just the array if supported.
-    // Wrapping in an object { data: [...] } is safer for BSON tools.
     const bsonData = BSON.serialize({ data: data });
     saveFile(`${key}.bson`, bsonData, true);
   } catch (err) {
@@ -149,35 +247,58 @@ const main = () => {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   }
 
-  console.log('Generating Users...');
+  // Base Resources
   const users = generateUsers(COUNTS.users);
   generateFormats('users', users);
 
-  console.log('Generating Posts...');
-  const posts = generatePosts(COUNTS.posts, users);
+  const postCategories = generatePostCategories(COUNTS.post_categories);
+  generateFormats('post_categories', postCategories);
+
+  const productCategories = generateProductCategories(COUNTS.product_categories);
+  generateFormats('product_categories', productCategories);
+
+  // Dependent Resources
+  const posts = generatePosts(COUNTS.posts, users, postCategories);
   generateFormats('posts', posts);
 
-  console.log('Generating Comments...');
   const comments = generateComments(COUNTS.comments, posts);
   generateFormats('comments', comments);
 
-  console.log('Generating Todos...');
+  const products = generateProducts(COUNTS.products, productCategories);
+  generateFormats('products', products);
+
+  const carts = generateCarts(COUNTS.carts, users, products);
+  generateFormats('carts', carts);
+
+  const orders = generateOrders(COUNTS.orders, users, products);
+  generateFormats('orders', orders);
+
+  const payments = generatePayments(COUNTS.payments, orders);
+  generateFormats('payments', payments);
+
+  const notes = generateNotes(COUNTS.notes, users);
+  generateFormats('notes', notes);
+
   const todos = generateTodos(COUNTS.todos, users);
   generateFormats('todos', todos);
 
-  console.log('Generating Photos...');
   const photos = generatePhotos(COUNTS.photos);
   generateFormats('photos', photos);
 
-  console.log('Generating GraphQL Schema...');
+  // Generate GraphQL Schema
   const schema = `
-    type User { id: ID!, name: String!, username: String!, email: String! }
-    type Post { id: ID!, title: String!, body: String!, userId: ID! }
+    type User { id: ID!, name: String!, username: String!, email: String!, role: String! }
+    type Post { id: ID!, title: String!, body: String!, userId: ID!, categoryId: ID! }
     type Comment { id: ID!, name: String!, email: String!, body: String!, postId: ID! }
+    type Product { id: ID!, title: String!, price: Float!, category: String!, rating: Rating }
+    type Rating { rate: Float, count: Int }
+    type Order { id: ID!, userId: ID!, total: Float!, status: String! }
     type Query {
       users: [User]
       posts: [Post]
       comments: [Comment]
+      products: [Product]
+      orders: [Order]
     }
   `;
   saveFile('schema.graphql', schema);

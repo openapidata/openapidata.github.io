@@ -6,7 +6,8 @@ import {
   Terminal, Share2, Copy, Check, Download, 
   Search, Play, RefreshCw, Server, Zap, 
   Shield, Globe, Box, Layers, Code, ArrowRight,
-  ChevronRight, Settings
+  ChevronRight, Settings, ShoppingCart, CreditCard,
+  StickyNote, Tag, Package
 } from 'lucide-react';
 
 export default function ApiDocs() {
@@ -14,29 +15,12 @@ export default function ApiDocs() {
   const [activePlayground, setActivePlayground] = useState('rest'); // 'rest' or 'graphql'
   const [copied, setCopied] = useState(null);
 
-  // --- MOCK DATA GENERATOR FOR PREVIEWS ---
-  // In a real app, these would fetch from the static JSON files.
-  const MOCK_DATA = {
-    users: [
-      { id: 1, name: "Leanne Graham", username: "Bret", email: "Sincere@april.biz", role: "Admin" },
-      { id: 2, name: "Ervin Howell", username: "Antonette", email: "Shanna@melissa.tv", role: "User" },
-      { id: 3, name: "Clementine Bauch", username: "Samantha", email: "Nathan@yesenia.net", role: "User" }
-    ],
-    posts: [
-      { id: 1, title: "sunt aut facere repellat provident occaecati", body: "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum", userId: 1 },
-      { id: 2, title: "qui est esse", body: "est rerum tempore vitae\nsequi sint nihil reprehenderit dolor beatae ea dolores neque", userId: 1 }
-    ],
-    comments: [
-      { id: 1, name: "id labore ex et quam laborum", email: "Eliseo@gardner.biz", body: "laudantium enim quasi est quidem magnam voluptate ipsam eos" },
-      { id: 2, name: "quo vero reiciendis velit similique earum", email: "Jayne_Kuhic@sydney.com", body: "est natus enim nihil est dolore omnis voluptatem numquam" }
-    ]
-  };
-
   // --- REST PLAYGROUND STATE ---
   const [restResource, setRestResource] = useState('users');
   const [restFormat, setRestFormat] = useState('json');
   const [restResponse, setRestResponse] = useState(null);
   const [restLoading, setRestLoading] = useState(false);
+  const [restStatus, setRestStatus] = useState(null);
 
   // --- GRAPHQL PLAYGROUND STATE ---
   const [gqlQuery, setGqlQuery] = useState(`query {
@@ -49,12 +33,20 @@ export default function ApiDocs() {
   const [gqlResult, setGqlResult] = useState(null);
   const [gqlLoading, setGqlLoading] = useState(false);
 
+  // Expanded Resource List
   const RESOURCES = [
     { name: 'users', count: 100, desc: 'User profiles with address, company & role', icon: <Globe className="w-4 h-4 text-blue-400"/> },
+    { name: 'products', count: 200, desc: 'E-commerce products with prices & ratings', icon: <Package className="w-4 h-4 text-orange-400"/> },
+    { name: 'orders', count: 150, desc: 'Customer orders with product lists', icon: <ShoppingCart className="w-4 h-4 text-emerald-400"/> },
+    { name: 'carts', count: 50, desc: 'Shopping cart sessions', icon: <ShoppingCart className="w-4 h-4 text-emerald-300"/> },
     { name: 'posts', count: 500, desc: 'Social media posts linked to users', icon: <FileText className="w-4 h-4 text-green-400"/> },
+    { name: 'post_categories', count: 10, desc: 'Categories for blog posts', icon: <Tag className="w-4 h-4 text-green-300"/> },
+    { name: 'product_categories', count: 15, desc: 'Categories for products', icon: <Tag className="w-4 h-4 text-orange-300"/> },
     { name: 'comments', count: 2000, desc: 'Comments attached to posts', icon: <Layers className="w-4 h-4 text-purple-400"/> },
-    { name: 'todos', count: 300, desc: 'Task items with completion status', icon: <Check className="w-4 h-4 text-emerald-400"/> },
-    { name: 'photos', count: 5000, desc: 'Album photos with thumbnails', icon: <Box className="w-4 h-4 text-orange-400"/> },
+    { name: 'payments', count: 150, desc: 'Transaction records & status', icon: <CreditCard className="w-4 h-4 text-rose-400"/> },
+    { name: 'notes', count: 100, desc: 'User notes and annotations', icon: <StickyNote className="w-4 h-4 text-yellow-400"/> },
+    { name: 'todos', count: 300, desc: 'Task items with completion status', icon: <Check className="w-4 h-4 text-teal-400"/> },
+    { name: 'photos', count: 500, desc: 'Album photos with thumbnails', icon: <Box className="w-4 h-4 text-indigo-400"/> },
   ];
 
   const FORMATS = [
@@ -71,30 +63,60 @@ export default function ApiDocs() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const executeRestRequest = () => {
+  // REAL FETCH IMPLEMENTATION
+  const executeRestRequest = async () => {
     setRestLoading(true);
     setRestResponse(null);
-    setTimeout(() => {
-      const data = MOCK_DATA[restResource] || [];
-      let formatted = "";
+    setRestStatus(null);
+    
+    try {
+      // Constructs URL relative to current domain
+      const url = `/api/v1/${restResource}.${restFormat}`;
+      const startTime = performance.now();
+      const res = await fetch(url);
+      const endTime = performance.now();
       
-      if (restFormat === 'json') formatted = JSON.stringify(data, null, 2);
-      else if (restFormat === 'csv') formatted = "id,name,email\n1,Leanne Graham,Sincere@april.biz\n2,Ervin Howell,Shanna@melissa.tv"; // Mock CSV
-      else if (restFormat === 'xml') formatted = "<users>\n  <user>\n    <id>1</id>\n    <name>Leanne Graham</name>\n  </user>\n</users>"; // Mock XML
-      else formatted = JSON.stringify(data); // Fallback
-
-      setRestResponse(formatted);
+      const text = await res.text();
+      setRestStatus(`${res.status} ${res.statusText} • ${Math.round(endTime - startTime)}ms`);
+      
+      if (!res.ok) {
+        setRestResponse(`Error: ${res.status} ${res.statusText}\n\nCould not fetch resource. Make sure you are running the generated build.`);
+      } else {
+        // Pretty print JSON if that's the format
+        if (restFormat === 'json') {
+          try {
+            const json = JSON.parse(text);
+            setRestResponse(JSON.stringify(json, null, 2));
+          } catch (e) {
+             setRestResponse(text);
+          }
+        } else {
+          setRestResponse(text);
+        }
+      }
+    } catch (err) {
+      setRestResponse(`Network Error: ${err.message}\n\nNote: If running locally without 'npm run build', these files might not exist yet.`);
+    } finally {
       setRestLoading(false);
-    }, 600);
+    }
   };
 
+  // Mock GraphQL for simulation
   const executeGqlRequest = () => {
     setGqlLoading(true);
     setTimeout(() => {
-      if (gqlQuery.includes('users')) {
-        setGqlResult(JSON.stringify({ data: { users: MOCK_DATA.users } }, null, 2));
+      // Simple mock response for demo
+      const isUsers = gqlQuery.includes('users');
+      const isProducts = gqlQuery.includes('products');
+      
+      let data = {};
+      if (isUsers) data.users = [{ id: 1, name: "Leanne Graham", email: "Sincere@april.biz" }];
+      if (isProducts) data.products = [{ id: 1, title: "Modern Rubber Soap", price: 45.00 }];
+      
+      if (!isUsers && !isProducts) {
+        setGqlResult(JSON.stringify({ error: "Query not supported in playground simulator. Try 'users' or 'products'." }, null, 2));
       } else {
-        setGqlResult(JSON.stringify({ error: "Unknown query. Try querying 'users'." }, null, 2));
+        setGqlResult(JSON.stringify({ data }, null, 2));
       }
       setGqlLoading(false);
     }, 600);
@@ -102,7 +124,7 @@ export default function ApiDocs() {
 
   // --- CODE SNIPPETS ---
   const getCodeSnippet = (lang) => {
-    const url = `https://apidata.gitlab.io/api/v1/users.json`;
+    const url = `https://openapidata.github.io/api/v1/products.json`;
     switch(lang) {
       case 'curl': return `curl -X GET "${url}" \\
   -H "Accept: application/json"`;
@@ -135,7 +157,7 @@ if err != nil {
             </div>
             <span className="font-bold text-xl tracking-tight text-white">OpenAPI<span className="text-indigo-400">Data</span></span>
             <span className="ml-2 px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] font-mono text-emerald-400">
-              v1.0 • Stable
+              v2.0 • Live
             </span>
           </div>
           <div className="flex gap-8 text-sm font-medium text-slate-400">
@@ -151,8 +173,8 @@ if err != nil {
             >
               Playground
             </button>
-            <a href="https://gitlab.com" target="_blank" rel="noreferrer" className="hover:text-white transition flex items-center gap-2">
-              <Share2 className="w-4 h-4" /> <span className="hidden sm:inline">GitLab</span>
+            <a href="https://github.com/openapidata/openapidata.github.io" target="_blank" rel="noreferrer" className="hover:text-white transition flex items-center gap-2">
+              <Share2 className="w-4 h-4" /> <span className="hidden sm:inline">Github</span>
             </a>
           </div>
         </div>
@@ -169,8 +191,8 @@ if err != nil {
                 </h1>
                 <p className="text-lg text-slate-400 mb-10 leading-relaxed max-w-2xl">
                   Build prototypes faster with our free, open-source static API. 
-                  Supports <span className="text-indigo-300 font-semibold">JSON, XML, CSV, YAML, NDJSON</span>, and <span className="text-indigo-300 font-semibold">GraphQL</span>. 
-                  Hosted on GitLab Pages for infinite scalability and zero latency.
+                  Now including <span className="text-indigo-300 font-semibold">Products, Orders, Payments</span>, and more.
+                  Hosted on GitHub Pages for infinite scalability and zero latency.
                 </p>
                 <div className="flex flex-wrap gap-4">
                   <button onClick={() => setActiveTab('playground')} className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3.5 rounded-lg font-semibold transition-all shadow-lg shadow-indigo-900/20 flex items-center gap-2 group">
@@ -266,16 +288,6 @@ if err != nil {
                              Details <ChevronRight className="w-4 h-4" />
                           </div>
                         </div>
-                        {/* Example Schema Display (Mock) */}
-                        <div className="border-t border-slate-800/50 bg-slate-950/30 p-4">
-                          <div className="text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">Model Schema</div>
-                          <pre className="font-mono text-xs text-slate-400">
-{`interface ${res.name.slice(0, -1).charAt(0).toUpperCase() + res.name.slice(0, -1).slice(1)} {
-  id: number;
-  ${res.name === 'users' ? 'name: string;\n  email: string;\n  address: Address;' : 'title: string;\n  body: string;'}
-}`}
-                          </pre>
-                        </div>
                       </div>
                     ))}
                   </div>
@@ -290,7 +302,7 @@ if err != nil {
                   <div className="space-y-4 text-sm text-slate-400">
                     <div className="flex justify-between py-2 border-b border-slate-800/50">
                       <span>Base URL</span>
-                      <code className="text-indigo-300">apidata.gitlab.io/api/v1</code>
+                      <code className="text-indigo-300">openapidata.github.io/api/v1</code>
                     </div>
                     <div className="flex justify-between py-2 border-b border-slate-800/50">
                       <span>Rate Limit</span>
@@ -356,7 +368,7 @@ if err != nil {
                         value={restResource}
                         onChange={(e) => setRestResource(e.target.value)}
                       >
-                        {RESOURCES.map(r => <option key={r.name} value={r.name}>/{r.name}</option>)}
+                        {RESOURCES.map(r => <option class="bg-slate-950" key={r.name} value={r.name}>/{r.name}</option>)}
                       </select>
                     </div>
                   </div>
@@ -389,8 +401,8 @@ if err != nil {
                 <div className="flex-1 bg-[#0B0F19] flex flex-col min-h-0">
                   <div className="px-4 py-2 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
                     <span className="text-xs text-slate-400">Response Preview</span>
-                    {restResponse && (
-                       <span className="text-xs text-emerald-400 font-mono">200 OK • 14ms</span>
+                    {restStatus && (
+                       <span className="text-xs text-emerald-400 font-mono">{restStatus}</span>
                     )}
                   </div>
                   <div className="flex-1 overflow-auto p-6 font-mono text-sm text-blue-100">

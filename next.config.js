@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Critical for GitLab Pages: tells Next.js to generate static HTML/JSON/CSS into an 'out' folder
+  // Critical for github Pages: tells Next.js to generate static HTML/JSON/CSS into an 'out' folder
   output: 'export',
   
   // Optional: optimizes images for static export (since the default Image component requires a server)
