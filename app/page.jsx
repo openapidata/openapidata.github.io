@@ -7,13 +7,14 @@ import {
   Search, Play, RefreshCw, Server, Zap, 
   Shield, Globe, Box, Layers, Code, ArrowRight,
   ChevronRight, Settings, ShoppingCart, CreditCard,
-  StickyNote, Tag, Package
+  StickyNote, Tag, Package, Menu, X
 } from 'lucide-react';
 
 export default function ApiDocs() {
   const [activeTab, setActiveTab] = useState('docs');
   const [activePlayground, setActivePlayground] = useState('rest'); // 'rest' or 'graphql'
   const [copied, setCopied] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // --- REST PLAYGROUND STATE ---
   const [restResource, setRestResource] = useState('users');
@@ -147,20 +148,35 @@ if err != nil {
   const [activeCodeLang, setActiveCodeLang] = useState('js');
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-slate-200 font-sans selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-[#0B0F19] text-slate-200 font-sans selection:bg-indigo-500/30 flex flex-col">
       {/* Navbar */}
       <nav className="border-b border-slate-800/60 bg-[#0B0F19]/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-tr from-indigo-600 to-purple-600 p-2 rounded-lg shadow-lg shadow-indigo-500/20">
               <Database className="w-5 h-5 text-white" />
             </div>
-            <span className="font-bold text-xl tracking-tight text-white">OpenAPI<span className="text-indigo-400">Data</span></span>
-            <span className="ml-2 px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] font-mono text-emerald-400">
-              v2.0 • Live
+            <div className="leading-tight">
+               <span className="font-bold text-lg sm:text-xl tracking-tight text-white block">OpenAPI<span className="text-indigo-400">Data</span></span>
+            </div>
+            <span className="hidden sm:inline-block ml-2 px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] font-mono text-emerald-400">
+              v2.0
             </span>
           </div>
-          <div className="flex gap-8 text-sm font-medium text-slate-400">
+
+          {/* Mobile Menu Toggle */}
+          <div className="md:hidden">
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+              className="text-slate-400 hover:text-white p-2 rounded-md active:bg-slate-800 transition"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6"/> : <Menu className="w-6 h-6"/>}
+            </button>
+          </div>
+
+          {/* Desktop Nav */}
+          <div className="hidden md:flex gap-6 lg:gap-8 text-sm font-medium text-slate-400">
             <button 
               onClick={() => setActiveTab('docs')} 
               className={`transition-colors duration-200 ${activeTab === 'docs' ? 'text-white' : 'hover:text-white'}`}
@@ -174,31 +190,52 @@ if err != nil {
               Playground
             </button>
             <a href="https://github.com/openapidata/openapidata.github.io" target="_blank" rel="noreferrer" className="hover:text-white transition flex items-center gap-2">
-              <Share2 className="w-4 h-4" /> <span className="hidden sm:inline">Github</span>
+              <Share2 className="w-4 h-4" /> <span className="hidden lg:inline">Github</span>
             </a>
           </div>
         </div>
+
+        {/* Mobile Nav Dropdown */}
+        {mobileMenuOpen && (
+           <div className="md:hidden border-t border-slate-800 bg-[#0B0F19] px-4 py-4 space-y-4 shadow-2xl animate-in slide-in-from-top-2 duration-200">
+              <button 
+                onClick={() => { setActiveTab('docs'); setMobileMenuOpen(false); }} 
+                className={`block w-full text-left py-3 px-2 rounded-lg ${activeTab === 'docs' ? 'bg-indigo-600/10 text-indigo-300 font-bold' : 'text-slate-400 hover:bg-slate-900'}`}
+              >
+                Documentation
+              </button>
+              <button 
+                onClick={() => { setActiveTab('playground'); setMobileMenuOpen(false); }} 
+                className={`block w-full text-left py-3 px-2 rounded-lg ${activeTab === 'playground' ? 'bg-indigo-600/10 text-indigo-300 font-bold' : 'text-slate-400 hover:bg-slate-900'}`}
+              >
+                Playground
+              </button>
+              <a href="https://github.com/openapidata/openapidata.github.io" target="_blank" rel="noreferrer" className="block w-full text-left py-3 px-2 text-slate-400 hover:bg-slate-900 rounded-lg">
+                GitHub Repo
+              </a>
+           </div>
+        )}
       </nav>
 
       {/* Hero */}
       {activeTab === 'docs' && (
         <>
           <div className="relative overflow-hidden border-b border-slate-800/60 bg-[#0F1422]">
-            <div className="max-w-7xl mx-auto px-6 py-24 relative z-10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 md:py-24 relative z-10">
               <div className="max-w-3xl">
-                <h1 className="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-indigo-300 mb-6 leading-tight">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-indigo-300 mb-6 leading-tight">
                   The Production-Ready<br />Mock Data API
                 </h1>
-                <p className="text-lg text-slate-400 mb-10 leading-relaxed max-w-2xl">
+                <p className="text-base sm:text-lg text-slate-400 mb-8 sm:mb-10 leading-relaxed max-w-2xl">
                   Build prototypes faster with our free, open-source static API. 
                   Now including <span className="text-indigo-300 font-semibold">Products, Orders, Payments</span>, and more.
                   Hosted on GitHub Pages for infinite scalability and zero latency.
                 </p>
-                <div className="flex flex-wrap gap-4">
-                  <button onClick={() => setActiveTab('playground')} className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3.5 rounded-lg font-semibold transition-all shadow-lg shadow-indigo-900/20 flex items-center gap-2 group">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button onClick={() => setActiveTab('playground')} className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3.5 rounded-lg font-semibold transition-all shadow-lg shadow-indigo-900/20 flex items-center justify-center gap-2 group active:scale-95">
                     <Zap className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" /> Try Playground
                   </button>
-                  <button onClick={() => document.getElementById('quickstart').scrollIntoView({ behavior: 'smooth'})} className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3.5 rounded-lg font-semibold transition border border-slate-700 flex items-center gap-2">
+                  <button onClick={() => document.getElementById('quickstart').scrollIntoView({ behavior: 'smooth'})} className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3.5 rounded-lg font-semibold transition border border-slate-700 flex items-center justify-center gap-2 active:scale-95">
                     <Terminal className="w-4 h-4" /> Quickstart
                   </button>
                 </div>
@@ -210,10 +247,10 @@ if err != nil {
             <div className="absolute top-20 right-20 w-96 h-96 bg-indigo-500/20 rounded-full blur-[128px] pointer-events-none" />
           </div>
 
-          <main className="max-w-7xl mx-auto px-6 py-16">
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
             
             {/* Features Grid */}
-            <div className="grid md:grid-cols-3 gap-6 mb-20">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 sm:mb-20">
               {[
                 { icon: <Shield className="w-6 h-6 text-emerald-400"/>, title: "No Auth Required", desc: "Just simple GET requests. No API keys, tokens, or rate limits to worry about." },
                 { icon: <Globe className="w-6 h-6 text-blue-400"/>, title: "All Formats", desc: "Native support for JSON, XML, CSV, YAML, NDJSON, and BSON out of the box." },
@@ -229,23 +266,23 @@ if err != nil {
               ))}
             </div>
 
-            <div className="grid lg:grid-cols-12 gap-16">
+            <div className="grid lg:grid-cols-12 gap-12 lg:gap-16">
               {/* Left: Documentation */}
-              <div className="lg:col-span-8 space-y-16">
+              <div className="lg:col-span-8 space-y-12 sm:space-y-16">
                 
                 {/* Quickstart Section */}
                 <section id="quickstart" className="scroll-mt-24">
                   <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
                     <Terminal className="w-6 h-6 text-indigo-400" /> Quickstart
                   </h2>
-                  <div className="bg-[#0F1422] border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+                  <div className="bg-[#0F1422] border border-slate-800 rounded-xl overflow-hidden shadow-2xl max-w-full">
                     {/* Tab Bar */}
-                    <div className="flex border-b border-slate-800 bg-slate-950/50">
+                    <div className="flex border-b border-slate-800 bg-slate-950/50 overflow-x-auto no-scrollbar">
                       {['js', 'python', 'go', 'curl'].map(lang => (
                         <button
                           key={lang}
                           onClick={() => setActiveCodeLang(lang)}
-                          className={`px-6 py-3 text-sm font-medium transition-colors border-r border-slate-800/50 ${
+                          className={`px-6 py-3 text-sm font-medium transition-colors border-r border-slate-800/50 whitespace-nowrap ${
                             activeCodeLang === lang 
                               ? 'text-indigo-400 bg-slate-900' 
                               : 'text-slate-500 hover:text-slate-300'
@@ -256,13 +293,14 @@ if err != nil {
                       ))}
                     </div>
                     {/* Code Area */}
-                    <div className="p-6 relative group">
-                      <pre className="font-mono text-sm text-slate-300 overflow-x-auto leading-relaxed">
+                    <div className="p-4 sm:p-6 relative group">
+                      <pre className="font-mono text-xs sm:text-sm text-slate-300 overflow-x-auto leading-relaxed max-w-full whitespace-pre">
                         {getCodeSnippet(activeCodeLang)}
                       </pre>
                       <button 
                         onClick={() => handleCopy(getCodeSnippet(activeCodeLang), 'snippet')}
-                        className="absolute top-4 right-4 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all border border-slate-700"
+                        className="absolute top-4 right-4 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2 rounded-lg opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all border border-slate-700"
+                        aria-label="Copy snippet"
                       >
                         {copied === 'snippet' ? <Check className="w-4 h-4 text-emerald-400"/> : <Copy className="w-4 h-4"/>}
                       </button>
@@ -277,15 +315,17 @@ if err != nil {
                   </h2>
                   <div className="space-y-4">
                     {RESOURCES.map((res) => (
-                      <div key={res.name} className="bg-slate-900/30 border border-slate-800 rounded-xl overflow-hidden">
-                        <div className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-900/50 transition">
+                      <div key={res.name} className="bg-slate-900/30 border border-slate-800 rounded-xl overflow-hidden group">
+                        <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between cursor-pointer hover:bg-slate-900/50 transition gap-4 sm:gap-0">
                           <div className="flex items-center gap-4">
                             <span className="bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded text-xs font-bold font-mono">GET</span>
-                            <code className="text-indigo-300 font-mono text-sm">/api/v1/{res.name}</code>
-                            <span className="text-slate-500 text-sm hidden sm:inline">• {res.count} records</span>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                                <code className="text-indigo-300 font-mono text-sm break-all">/api/v1/{res.name}</code>
+                                <span className="text-slate-500 text-xs sm:text-sm">• {res.count} records</span>
+                            </div>
                           </div>
-                          <div className="text-slate-400 text-sm flex items-center gap-2">
-                             Details <ChevronRight className="w-4 h-4" />
+                          <div className="text-slate-400 text-sm flex items-center gap-2 self-end sm:self-auto">
+                             <span className="hidden sm:inline">Details</span> <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                           </div>
                         </div>
                       </div>
@@ -297,12 +337,12 @@ if err != nil {
 
               {/* Right: Sidebar Info */}
               <div className="lg:col-span-4 space-y-8">
-                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 sticky top-24">
+                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 lg:sticky lg:top-24">
                   <h3 className="font-bold text-white mb-4">Support Info</h3>
                   <div className="space-y-4 text-sm text-slate-400">
-                    <div className="flex justify-between py-2 border-b border-slate-800/50">
+                    <div className="flex flex-col sm:flex-row sm:justify-between py-2 border-b border-slate-800/50 gap-1 sm:gap-0">
                       <span>Base URL</span>
-                      <code className="text-indigo-300">openapidata.github.io/api/v1</code>
+                      <code className="text-indigo-300 break-all text-xs sm:text-sm">openapidata.github.io/api/v1</code>
                     </div>
                     <div className="flex justify-between py-2 border-b border-slate-800/50">
                       <span>Rate Limit</span>
@@ -331,10 +371,10 @@ if err != nil {
 
       {/* Playground Area */}
       {activeTab === 'playground' && (
-        <main className="max-w-7xl mx-auto px-6 py-12 h-[calc(100vh-64px)] overflow-hidden flex flex-col">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 w-full flex-1 flex flex-col min-h-[calc(100vh-64px)] lg:h-[calc(100vh-64px)] lg:overflow-hidden">
           
-          <div className="flex items-center justify-between mb-6">
-             <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4 sm:gap-0">
+             <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800 self-start">
                 <button 
                   onClick={() => setActivePlayground('rest')}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition ${activePlayground === 'rest' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
@@ -353,22 +393,26 @@ if err != nil {
              </div>
           </div>
 
-          <div className="flex-1 bg-[#0F1422] border border-slate-800 rounded-xl overflow-hidden shadow-2xl flex flex-col lg:flex-row">
+          <div className="flex-1 bg-[#0F1422] border border-slate-800 rounded-xl overflow-hidden shadow-2xl flex flex-col lg:flex-row min-h-[600px] lg:min-h-0">
             
             {activePlayground === 'rest' ? (
               // --- REST INTERFACE ---
               <>
-                <div className="w-full lg:w-1/3 bg-slate-950 border-r border-slate-800 p-6 flex flex-col gap-6">
+                <div className="w-full lg:w-1/3 bg-slate-950 border-b lg:border-b-0 lg:border-r border-slate-800 p-6 flex flex-col gap-6 shrink-0">
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Endpoint</label>
                     <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-lg p-1">
                       <span className="bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded font-mono text-sm font-bold">GET</span>
+                      {/* Responsiveness Tip: 
+                         Using text-base on mobile prevents iOS from zooming in when the select is focused.
+                         We switch to text-sm on medium screens and up.
+                      */}
                       <select 
-                        className="bg-transparent text-slate-200 text-sm font-mono w-full outline-none p-1"
+                        className="bg-transparent text-slate-200 text-base md:text-sm font-mono w-full outline-none p-1"
                         value={restResource}
                         onChange={(e) => setRestResource(e.target.value)}
                       >
-                        {RESOURCES.map(r => <option class="bg-slate-950" key={r.name} value={r.name}>/{r.name}</option>)}
+                        {RESOURCES.map(r => <option className="bg-slate-950" key={r.name} value={r.name}>/{r.name}</option>)}
                       </select>
                     </div>
                   </div>
@@ -380,7 +424,7 @@ if err != nil {
                         <button
                           key={fmt}
                           onClick={() => setRestFormat(fmt)}
-                          className={`px-3 py-2 rounded text-xs font-mono border transition ${restFormat === fmt ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500'}`}
+                          className={`px-2 sm:px-3 py-2 rounded text-xs font-mono border transition ${restFormat === fmt ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500'}`}
                         >
                           .{fmt}
                         </button>
@@ -391,14 +435,14 @@ if err != nil {
                   <button 
                     onClick={executeRestRequest}
                     disabled={restLoading}
-                    className="mt-auto bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="mt-auto bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-900/20 active:scale-95 transform"
                   >
                     {restLoading ? <RefreshCw className="w-4 h-4 animate-spin"/> : <Play className="w-4 h-4 fill-current"/>}
                     Send Request
                   </button>
                 </div>
 
-                <div className="flex-1 bg-[#0B0F19] flex flex-col min-h-0">
+                <div className="flex-1 bg-[#0B0F19] flex flex-col min-h-[400px]">
                   <div className="px-4 py-2 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
                     <span className="text-xs text-slate-400">Response Preview</span>
                     {restStatus && (
@@ -425,28 +469,29 @@ if err != nil {
             ) : (
               // --- GRAPHQL INTERFACE ---
               <>
-                 <div className="w-full lg:w-1/3 bg-slate-950 border-r border-slate-800 flex flex-col">
+                 <div className="w-full lg:w-1/3 bg-slate-950 border-b lg:border-b-0 lg:border-r border-slate-800 flex flex-col shrink-0 min-h-[300px]">
                     <div className="px-4 py-2 bg-slate-900 border-b border-slate-800 text-xs font-bold text-slate-500 uppercase">
                        Operation
                     </div>
+                    {/* Using text-base on mobile to prevent zoom */}
                     <textarea 
                       value={gqlQuery}
                       onChange={(e) => setGqlQuery(e.target.value)}
-                      className="flex-1 bg-slate-950 text-indigo-100 font-mono text-sm p-4 outline-none resize-none focus:bg-slate-900/50 transition"
+                      className="flex-1 bg-slate-950 text-indigo-100 font-mono text-base md:text-sm p-4 outline-none resize-none focus:bg-slate-900/50 transition"
                       spellCheck="false"
                     />
                     <div className="p-4 border-t border-slate-800">
                        <button 
                         onClick={executeGqlRequest}
                         disabled={gqlLoading}
-                        className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-lg font-bold transition flex items-center justify-center gap-2"
+                        className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/20 active:scale-95 transform"
                       >
                          {gqlLoading ? <RefreshCw className="w-4 h-4 animate-spin"/> : <Play className="w-4 h-4 fill-current"/>}
                          Execute Query
                       </button>
                     </div>
                  </div>
-                 <div className="flex-1 bg-[#0B0F19] flex flex-col min-h-0">
+                 <div className="flex-1 bg-[#0B0F19] flex flex-col min-h-[400px]">
                     <div className="px-4 py-2 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
                       <span className="text-xs text-slate-400">Data</span>
                     </div>
@@ -474,7 +519,7 @@ if err != nil {
 
       {/* Footer */}
       {activeTab === 'docs' && (
-        <footer className="border-t border-slate-800/60 bg-[#0B0F19] py-12">
+        <footer className="border-t border-slate-800/60 bg-[#0B0F19] py-12 mt-auto">
           <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-2 opacity-50">
                <Database className="w-5 h-5 text-slate-400" />
@@ -484,8 +529,8 @@ if err != nil {
                Open Source project maintained by the community.
             </div>
             <div className="flex gap-4">
-               <a href="#" className="text-slate-500 hover:text-indigo-400 transition">GitLab</a>
-               <a href="#" className="text-slate-500 hover:text-indigo-400 transition">License</a>
+               <a target="_blank" href="https://github.com/openapidata/openapidata.github.io" className="text-slate-500 hover:text-indigo-400 transition">GitHub</a>
+               <a target="_blank" href="https://raw.githubusercontent.com/openapidata/openapidata.github.io/refs/heads/main/LICENSE" className="text-slate-500 hover:text-indigo-400 transition">License</a>
             </div>
           </div>
         </footer>
